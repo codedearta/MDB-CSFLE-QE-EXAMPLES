@@ -1,0 +1,18 @@
+{
+  "name": "mongodb-field-level-encryption",
+  "version": "1.0.0",
+  "description": "demo app to showcase mongodb CSFLE",
+  "main": "make_data_keys.js",
+  "scripts": {
+    "create_vault": "node make_data_keys.js",
+    "insert": "node insert_encrypted_document.js",
+    "query": "node query_documents.js"
+  },
+  "author": "Sepp Renfer",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "mongodb": "5.6",
+    "mongodb-client-encryption": "^2.8.0"
+  }
+}
