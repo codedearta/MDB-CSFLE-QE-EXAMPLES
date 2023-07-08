@@ -1,14 +1,16 @@
-const mongodb = require("mongodb");
+const { MongoClient, Binary } = require("mongodb");
 const { ClientEncryption } = require("mongodb-client-encryption");
-const { MongoClient, Binary } = mongodb;
 
 const { getConfig } = require("./your_config");
 const configuration = getConfig();
 
+const keyVaultDatabase = configuration.KEY_VAULT_DATABASE;
+const keyVaultCollection = configuration.KEY_VAULT_COLLECTION;
+const keyVaultNamespace = `${keyVaultDatabase}.${keyVaultCollection}`;
+
 // start-local-cmk
 const fs = require("fs");
 const crypto = require("crypto");
-const { config } = require("dotenv");
 try {
   fs.writeFileSync("master-key.txt", crypto.randomBytes(96));
 } catch (err) {
@@ -19,6 +21,7 @@ try {
 // start-kmsproviders
 const provider = "local";
 const path = "./master-key.txt";
+// WARNING: Do not use a local key file in a production application
 const localMasterKey = fs.readFileSync(path);
 const kmsProviders = {
   local: {
@@ -33,18 +36,16 @@ const kmsProviders = {
 async function main() {
   // start-create-index
   const uri = configuration.MONGODB_URI;
-  const keyVaultDatabase = configuration.KEY_VAULT_DATABASE;
-  const keyVaultCollection = configuration.KEY_VAULT_COLLECTION;
-  const keyVaultNamespace = `${keyVaultDatabase}.${keyVaultCollection}`;
   const keyVaultClient = new MongoClient(uri);
   await keyVaultClient.connect();
   const keyVaultDB = keyVaultClient.db(keyVaultDatabase);
   // Drop the Key Vault Collection in case you created this collection
   // in a previous run of this application.
   await keyVaultDB.dropDatabase();
+  await keyVaultClient.db(configuration.MEDICAL_RECORDS_DATABASE).dropDatabase();
+
   // Drop the database storing your encrypted fields as all
   // the DEKs encrypting those fields were deleted in the preceding line.
-  await keyVaultClient.db("medicalRecords").dropDatabase();
   const keyVaultColl = keyVaultDB.collection(keyVaultCollection);
   await keyVaultColl.createIndex(
     { keyAltNames: 1 },
@@ -55,14 +56,7 @@ async function main() {
   );
   // end-create-index
 
-  // start-create-dek
-  const client = new MongoClient(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-  await client.connect();
-
-  const encryption = new ClientEncryption(client, {
+  const encryption = new ClientEncryption(keyVaultClient, {
     keyVaultNamespace,
     kmsProviders,
   });
@@ -92,8 +86,70 @@ async function main() {
   });
   console.log("user_key_timo [base64]: ", key.toString("base64"));
 
+
+
+
+
+
+
+  // QE keys
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["email_key"],
+  });
+  console.log("email_key [base64]: ", key.toString("base64"));
+
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["name_key"],
+  });
+  console.log("name_key [base64]: ", key.toString("base64"));
+  
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["ssn_key"],
+  });
+  console.log("ssn_key [base64]: ", key.toString("base64")); 
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["phone_key"],
+  });
+  console.log("phone_key [base64]: ", key.toString("base64"));
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["street_key"],
+  });
+  console.log("street_key [base64]: ", key.toString("base64"));
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["city_key"],
+  });
+  console.log("city_key [base64]: ", key.toString("base64"));
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["zipCode_key"],
+  });
+  console.log("zipCode_key [base64]: ", key.toString("base64"));
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["policyNumber_key"],
+  });
+  console.log("policyNumber_key [base64]: ", key.toString("base64"));
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["provider_key"],
+  });
+  console.log("provider_key [base64]: ", key.toString("base64"));
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["bloodType_key"],
+  });
+  console.log("bloodType_key [base64]: ", key.toString("base64"));
+   
+  key = await encryption.createDataKey(provider, {
+    keyAltNames: ["condition_key"],
+  });
+  console.log("condition_key [base64]: ", key.toString("base64"));
+
   await keyVaultClient.close();
-  await client.close();
+  // await client.close();
   // end-create-dek
 }
 main();

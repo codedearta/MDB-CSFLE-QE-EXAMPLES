@@ -5,6 +5,7 @@
   "main": "make_data_keys.js",
   "scripts": {
     "create_vault": "node make_data_keys.js",
+    "create_qe_collection": "node make_qe_collection.js",
     "insert": "node insert_encrypted_document.js",
     "query": "node query_documents.js"
   },
