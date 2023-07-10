@@ -9,10 +9,8 @@ const db = configuration.MEDICAL_RECORDS_DATABASE;
 const csfle_collection = configuration.PATIENTS_COLLECTION_CSFLE;
 const qe_collection = configuration.PATIENTS_COLLECTION_QE;
 const csfle_namespace = `${db}.${csfle_collection}`;
-const qe_namespace = `${db}.${qe_collection}`;
 // start-kmsproviders
 const fs = require("fs");
-const provider = "local";
 const path = "./master-key.txt";
 const localMasterKey = fs.readFileSync(path);
 
@@ -140,6 +138,15 @@ const encryption = new ClientEncryption(regularClient, {
   kmsProviders,
 });
 
+async function manuallyEncrytpValue(value, keyAlias) {
+  return encryption.encrypt(value,
+    { 
+      keyAltName: keyAlias, 
+      algorithm: "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic" 
+    }
+  );
+}
+
 async function csfle_insert_docs() {
   try {
     await regularClient.connect();
@@ -149,7 +156,9 @@ async function csfle_insert_docs() {
       console.log("csfle secure client created.");
       // start-insert
       try {
-        let writeResult = await csfle_secureClient
+
+        let encryptedBloodType = await manuallyEncrytpValue("AB+", "bloodType_key");
+        await csfle_secureClient
           .db(db)
           .collection(csfle_collection)
           .insertOne({
@@ -166,11 +175,12 @@ async function csfle_insert_docs() {
             healthInfo: {
               policyNumber: 123142,
               provider: "KPT",
-              bloodType: "AB+",
+              bloodType: encryptedBloodType,
               condition: "lazy",
             },
           });
 
+        encryptedBloodType = await manuallyEncrytpValue("AB-", "bloodType_key");
         writeResult = await csfle_secureClient
           .db(db)
           .collection(csfle_collection)
@@ -188,7 +198,7 @@ async function csfle_insert_docs() {
             healthInfo: {
               policyNumber: 567894,
               provider: "KPT",
-              bloodType: "AB-",
+              bloodType: await manuallyEncrytpValue("AB-","bloodType_key"),
               condition: "eager",
             },
           });

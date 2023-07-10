@@ -110,6 +110,19 @@ const encryption = new ClientEncryption(qeRegularClient, {
   kmsProviders,
 });
 
+async function manuallyEncrytpValue(value, keyAlias) {
+  return encryption.encrypt(value,
+    { 
+      keyAltName: keyAlias, 
+      algorithm: "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic" 
+    }
+  );
+}
+
+async function manuallyDecrytpValue(cypherText) {
+  return encryption.decrypt(cypherText);
+}
+
 async function csfleRun() {
   try {
     await csfleRegularClient.connect();
@@ -120,12 +133,15 @@ async function csfleRun() {
       
       // start-find
       console.log("csfle finding a document with regular (non-encrypted) client.");
+      const encryptedBloodTypeABPlus = await manuallyEncrytpValue("AB+", "bloodType_key");
+      const encryptedBloodTypeABMinus = await manuallyEncrytpValue("AB-", "bloodType_key");
       console.log(
-        await csfleRegularClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": "AB+" })
+        await csfleRegularClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABPlus })
       );
 
+      encryptedBloodType = await manuallyEncrytpValue("AB-", "bloodType_key");
       console.log(
-        await csfleRegularClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": "AB-" })
+        await csfleRegularClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABMinus })
       );
 
       console.log(
@@ -133,18 +149,21 @@ async function csfleRun() {
       );
 
       console.log(
-        await secureClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": "AB+" })
+        await secureClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABPlus })
       );
 
 
       try { 
+        console.log("csfle deleting user_key_2")
         const key2 = await encryption.getKeyByAltName("user_key_2")
         await encryption.deleteKey(key2._id); 
       } catch (ex) {
         console.log(ex.message);
       }
+
+      console.log("csfle trying to decrypt document with missing key");
       console.log(
-        await secureClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": "AB-" })
+        await secureClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABMinus })
       );
       // end-find
     } catch (exception) {
@@ -179,13 +198,15 @@ async function qeRun(){
       
       // start-find
       console.log("qe finding a document with regular (non-encrypted) client.");
-      console.log(
-        await qeRegularClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB+" })
-      );
+      let allPAtients = await qeRegularClient.db(db).collection(qeCollection).find({}).toArray();
+      allPAtients.forEach(p => console.log(p));
+      // console.log(
+      //   await qeRegularClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB+" })
+      // );
 
-      console.log(
-        await qeRegularClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB-" })
-      );
+      // console.log(
+      //   await qeRegularClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB-" })
+      // );
 
       console.log(
         "qe finding a document with encrypted client, searching on an encrypted field"

@@ -6,6 +6,7 @@ const config = {
   PATIENTS_COLLECTION_CSFLE: "patientsCSFLE",
   PATIENTS_COLLECTION_QE: "patientsQE",
   MONGODB_URI: "mongodb+srv://sepp:sepp@vietnam-appencryption-d.lyp3u.mongodb.net/",
+  KEYVAULT_MONGODB_URI: "mongodb+srv://sepp:sepp@sandbox.fgrnhsp.mongodb.net/",
   SHARED_LIB_PATH: "/Users/sepp.renfer/vietnamTalk/nodeapp/mongo_crypt_shared_v1-macos-x86_64-enterprise-6.0.7/lib/mongo_crypt_v1.dylib"
 };
 
@@ -89,12 +90,12 @@ async function getQeFieldMap(clientEncryption) {
           bsonType: "string",
           queries: { queryType: "equality" },
         },
-        // {
-        //   keyId: bloodType_key._id,
-        //   path: "healthInfo.bloodType",
-        //   bsonType: "string",
-        //   queries: { queryType: "equality" },
-        // },
+        {
+          keyId: bloodType_key._id,
+          path: "healthInfo.bloodType",
+          bsonType: "string",
+          queries: { queryType: "equality" },
+        },
         {
           keyId: condition_key._id,
           path: "healthInfo.condition",

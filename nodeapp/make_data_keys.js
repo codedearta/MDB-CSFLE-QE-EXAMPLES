@@ -1,4 +1,4 @@
-const { MongoClient, Binary } = require("mongodb");
+const { MongoClient } = require("mongodb");
 const { ClientEncryption } = require("mongodb-client-encryption");
 
 const { getConfig } = require("./your_config");
