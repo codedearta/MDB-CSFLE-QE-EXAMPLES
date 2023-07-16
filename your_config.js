@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const config = {
   // Mongo Paths + URI
   KEY_VAULT_DATABASE: "encryption",
@@ -5,9 +7,9 @@ const config = {
   MEDICAL_RECORDS_DATABASE: "medicalRecords",
   PATIENTS_COLLECTION_CSFLE: "patientsCSFLE",
   PATIENTS_COLLECTION_QE: "patientsQE",
-  MONGODB_URI: "mongodb+srv://sepp:sepp@vietnam-appencryption-d.lyp3u.mongodb.net/",
-  KEYVAULT_MONGODB_URI: "mongodb+srv://sepp:sepp@sandbox.fgrnhsp.mongodb.net/",
-  SHARED_LIB_PATH: "/Users/sepp.renfer/vietnamTalk/nodeapp/mongo_crypt_shared_v1-macos-x86_64-enterprise-6.0.7/lib/mongo_crypt_v1.dylib"
+  MONGODB_URI: process.env.MONGODB_URI,
+  KEYVAULT_MONGODB_URI: process.env.KEYVAULT_MONGODB_URI,
+  SHARED_LIB_PATH: process.env.SHARED_LIB_PATH,
 };
 
 
