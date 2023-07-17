@@ -32,50 +32,6 @@ const keyVaultCollection = configuration.KEY_VAULT_COLLECTION;
 const keyVaultNamespace = `${keyVaultDatabase}.${keyVaultCollection}`;
 // end-key-vault
 
-// start-schema
-const schema = {
-  bsonType: "object",
-  properties: {
-    insurance: {
-      bsonType: "object",
-      properties: {
-        policyNumber: {
-          encrypt: {
-            bsonType: "int",
-            keyId: "/app_key",
-            algorithm: "AEAD_AES_256_CBC_HMAC_SHA_512-Random",
-          },
-        },
-      },
-    },
-    medicalRecords: {
-      encrypt: {
-        bsonType: "array",
-        keyId: "/app_key",
-        algorithm: "AEAD_AES_256_CBC_HMAC_SHA_512-Random",
-      },
-    },
-    bloodType: {
-      encrypt: {
-        bsonType: "string",
-        keyId: "/user_key",
-        algorithm: "AEAD_AES_256_CBC_HMAC_SHA_512-Random",
-      },
-    },
-    ssn: {
-      encrypt: {
-        bsonType: "int",
-        keyId: "/app_key",
-        algorithm: "AEAD_AES_256_CBC_HMAC_SHA_512-Random",
-      },
-    },
-  },
-};
-
-var patientSchema = {};
-patientSchema[csfleNamespace] = schema;
-// end-schema
-
 // start-extra-options
 const extraOptions = {
   mongocryptdSpawnPath: configuration["MONGOCRYPTD_PATH"],
@@ -89,7 +45,6 @@ const secureClient = new MongoClient(connectionString, {
   autoEncryption: {
     keyVaultNamespace,
     kmsProviders,
-    schemaMap: patientSchema,
     extraOptions: extraOptions,
   },
 });
@@ -132,21 +87,22 @@ async function csfleRun() {
       console.log("csfle secure client created.");
       
       // start-find
-      console.log("csfle finding a document with regular (non-encrypted) client.");
+      console.log("csfle finding a document with regular (non-encrypted) client:");
       const encryptedBloodTypeABPlus = await manuallyEncrytpValue("AB+", "bloodType_key");
       const encryptedBloodTypeABMinus = await manuallyEncrytpValue("AB-", "bloodType_key");
+      console.log(`\x1b[32muse ${db}`);
+      console.log(`db.${csfleCollection}.findOne({ "healthInfo.bllodType": ${encryptedBloodTypeABPlus}}):\n \x1b[0m`);
       console.log(
         await csfleRegularClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABPlus })
       );
 
-      encryptedBloodType = await manuallyEncrytpValue("AB-", "bloodType_key");
-      console.log(
-        await csfleRegularClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABMinus })
-      );
-
-      console.log(
-        "csfle finding a document with encrypted client, searching on an encrypted field"
-      );
+      // encryptedBloodType = await manuallyEncrytpValue("AB-", "bloodType_key");
+      // console.log(
+      //   await csfleRegularClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABMinus })
+      // );
+      console.log(`\x1b[32muse ${db}`);
+      console.log("csfle finding a document with encrypted client, searching on an encrypted field");
+      console.log(`db.${csfleCollection}.findOne({ "healthInfo.bllodType": ${encryptedBloodTypeABPlus}}):\n \x1b[0m`);
 
       console.log(
         await secureClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABPlus })
@@ -161,13 +117,16 @@ async function csfleRun() {
         console.log(ex.message);
       }
 
-      console.log("csfle trying to decrypt document with missing key");
+      console.log("\x1b[31mcsfle trying to decrypt document with missing key: \x1b[0m");
+      console.log("");
       console.log(
         await secureClient.db(db).collection(csfleCollection).findOne({ "healthInfo.bloodType": encryptedBloodTypeABMinus })
       );
       // end-find
     } catch (exception) {
+      console.log("\x1b[31m")
       console.log(exception.message);
+      console.log("\x1b[0m \n")
     } finally {
       await secureClient.close();
     }
@@ -179,7 +138,6 @@ async function csfleRun() {
 async function qeRun(){
   try {
     await qeRegularClient.connect();
-    console.log("qe regular client created.");
 
     const qeFieldMap = await getQeFieldMap(encryption);
 
@@ -194,28 +152,35 @@ async function qeRun(){
 
     try {
       await qe_secureClient.connect();
-      console.log("qe secure client created.");
+      console.log("\x1b[33m")
+      console.log("Queryable Encryption - secure client created.");
+      
       
       // start-find
-      console.log("qe finding a document with regular (non-encrypted) client.");
+      console.log("finding a document with regular (non-encrypted) client.");
+      console.log("");
+      console.log(`use ${db}`);
+      console.log(`db.${qeCollection}.find({})`);
+      console.log("\x1b[0m \n");
       let allPAtients = await qeRegularClient.db(db).collection(qeCollection).find({}).toArray();
       allPAtients.forEach(p => console.log(p));
-      // console.log(
-      //   await qeRegularClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB+" })
-      // );
 
-      // console.log(
-      //   await qeRegularClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB-" })
-      // );
-
-      console.log(
-        "qe finding a document with encrypted client, searching on an encrypted field"
-      );
-
+      // start-find
+      console.log("\x1b[32m")
+      console.log("finding a document with encrypted client, searching on an encrypted field");
+      console.log("");
+      console.log(`use ${db}`);
+      console.log(`db.${qeCollection}.find({"healthInfo.bloodType": "AB+" })`);
+      console.log("\x1b[0m");
       console.log(
         await qe_secureClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB+" },{ projection: { __safeContent__: 0}})
       );
 
+
+      // start-find
+      console.log("\x1b[32m")
+      console.log(`db.${qeCollection}.find({"healthInfo.bloodType": "AB-" })`);
+      console.log("\x1b[0m");
       console.log(
         await qe_secureClient.db(db).collection(qeCollection).findOne({ "healthInfo.bloodType": "AB-" },{ projection: { __safeContent__: 0}})
       );
