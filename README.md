@@ -23,6 +23,12 @@ curl -O https://downloads.mongodb.com/linux/mongo_crypt_shared_v1-linux-x86_64-e
 
 tar -xvf mongo_crypt_shared_v1-linux-x86_64-enterprise-amazon2-6.0.7.tgz
 
+rm mongo_crypt_shared_v1-linux-x86_64-enterprise-amazon2-6.0.7.tgz
+rm MPL-2
+rm THIRD-PARTY-NOTICES
+rm README
+rm LICENSE-Enterprise.txt
+
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 
 source ~/.bashrc
@@ -31,9 +37,13 @@ nvm install 16
 
 npm install
 
-vi your_config.js
+create a .env-file in the project root specifing the connection strings to your MongoDB clusters and the SHARED_LIB_PATH
 
-SHARED_LIB_PATH: "lib/mongo_crypt_v1.so"
+cat <<-EOF >> .env
+MONGODB_URI=<MONGODB_URI_INCLUDING_CREDENTIALS>
+KEYVAULT_MONGODB_URI=<MONGODB_URI_INCLUDING_CREDENTIALS>
+SHARED_LIB_PATH=lib/mongo_crypt_v1.so
+EOF
 
 sudo vi /etc/yum.repos.d/mongodb-enterprise-6.0.repo
 
