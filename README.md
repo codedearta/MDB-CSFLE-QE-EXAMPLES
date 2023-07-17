@@ -39,11 +39,13 @@ npm install
 
 create a .env-file in the project root specifing the connection strings to your MongoDB clusters and the SHARED_LIB_PATH
 
+```bash
 cat <<-EOF >> .env
-MONGODB_URI=<MONGODB_URI_INCLUDING_CREDENTIALS>
-KEYVAULT_MONGODB_URI=<MONGODB_URI_INCLUDING_CREDENTIALS>
+MONGODB_URI=mongodb+srv://<username>:<password>@clustername
+KEYVAULT_MONGODB_URI=mongodb+srv://<username>:<password>`@clustername
 SHARED_LIB_PATH=lib/mongo_crypt_v1.so
 EOF
+```
 
 sudo vi /etc/yum.repos.d/mongodb-enterprise-6.0.repo
 
@@ -55,7 +57,7 @@ enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
 
 sudo yum install -y mongodb-enterprise
- 
+
 in the nodeapp folder create a master key
 openssl rand 96 > master-key.txt
 
